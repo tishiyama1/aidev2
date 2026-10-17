@@ -1,6 +1,6 @@
 // Canvas drawing. The world is clipped to a fixed 1280x720 view so every
 // screen shape sees the same distance ahead of the pen.
-import { VIEW_W, VIEW_H, BALL_R, DX, RING_R, UNITS_PER_METER, CRUISE_SPEED } from './constants.js';
+import { VIEW_W, VIEW_H, BALL_R, DX, RING_R, UNITS_PER_METER, CRUISE_SPEED, BOUNCE_IMPACT, HARD_IMPACT } from './constants.js';
 import { GHOST_INTERVAL } from './game.js';
 
 const C = {
@@ -74,12 +74,17 @@ export class Renderer {
 
   onEvent(e) {
     if (e.type === 'land') {
-      const n = Math.round(clamp(e.impact / 25, 2, 24));
+      const n = Math.round(clamp(e.impact / 20, 2, 40));
       this._burst(e.x, e.y, n, e.quality === 'perfect' ? C.warm : '#FFFFFF', e.impact * 0.6, -Math.PI / 2, 1.6);
+      // Hard landings hurt without killing: the harder, the heavier they feel.
+      const hard = clamp((e.impact - BOUNCE_IMPACT * 0.6) / (HARD_IMPACT - BOUNCE_IMPACT * 0.6), 0, 1.5);
+      if (hard > 0) {
+        this.shake = Math.max(this.shake, 3 + hard * 9);
+        this._burst(e.x, e.y + 4, Math.round(hard * 24), `rgb(${C.line})`, 200 + hard * 220, -Math.PI / 2, 2.8);
+      }
       if (e.quality === 'perfect') this._popup(`PERFECT ×${e.flow.toFixed(1)}`, e.x, e.y - 34, C.warm, 18);
       else if (e.quality === 'clean') this._popup(`CLEAN ×${e.flow.toFixed(1)}`, e.x, e.y - 34, C.text, 15);
-      else if (e.quality === 'rough') this._popup('ROUGH', e.x, e.y - 34, C.dim, 13);
-      if (e.quality === 'rough') this.shake = Math.max(this.shake, 4);
+      else if (e.quality === 'rough') this._popup('ROUGH', e.x, e.y - 34, C.dim, Math.round(13 + Math.min(1, hard) * 9));
     } else if (e.type === 'ring') {
       this._burst(e.x, e.y, 16, C.warm, 260, 0, Math.PI * 2);
       this._popup(`+${e.points}`, e.x, e.y - 30, C.warm, 16);

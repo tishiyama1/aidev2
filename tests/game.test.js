@@ -98,6 +98,14 @@ test('landings feed the flow multiplier, a rough one resets it', () => {
   assert.equal(g.flow, 1);
 });
 
+test('the hop after a bounce neither earns nor resets flow', () => {
+  const g = new Game(1);
+  g._onLand({ type: 'land', loss: 0.01, airTime: 1, impact: 10 });
+  g._onLand({ type: 'land', loss: 0.01, airTime: 0.5, impact: 10, rebound: true });
+  g._onLand({ type: 'land', loss: 0.5, airTime: 0.5, impact: 10, rebound: true });
+  assert.equal(g.flow, 1.5);
+});
+
 test('flying through a ring speeds the ball up and scores', () => {
   const g = new Game(1);
   g.course.ensure(5000);

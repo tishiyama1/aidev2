@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Terrain } from '../src/terrain.js';
 import { createBall, restingY, speedOf, stepBall } from '../src/physics.js';
-import { DX, GRAVITY, ROLL, DRAG, CRASH_IMPACT, BALL_R } from '../src/constants.js';
+import { DX, GRAVITY, ROLL, DRAG, BOUNCE_IMPACT, BALL_R } from '../src/constants.js';
 
 function terrainFrom(fn, length = 20000) {
   const t = new Terrain();
@@ -80,13 +80,22 @@ test('landing along the slope keeps the speed, landing flat against it loses it'
   assert.ok(flat.loss > 0.25, `flat loss ${flat.loss}`);
 });
 
-test('a hard flat landing shatters the ball', () => {
+test('a hard flat landing is survived: it costs speed and bounces', () => {
   const t = terrainFrom(() => 3000);
-  const b = createBall(100, 0, 100, 0);
+  const b = createBall(100, 0, 300, 0);
   b.grounded = false;
-  const ev = run(b, t, 3);
-  assert.equal(ev?.type, 'crash');
-  assert.ok(ev.impact > CRASH_IMPACT);
+  const lands = [];
+  let launchedAfterLanding = false;
+  const crash = run(b, t, 3, (e) => {
+    if (e.type === 'land') lands.push(e);
+    if (e.type === 'launch' && lands.length) launchedAfterLanding = true;
+  });
+  assert.equal(crash, null, 'no crash');
+  assert.ok(lands[0].impact > BOUNCE_IMPACT);
+  assert.ok(lands[0].loss > 0.6, `loss ${lands[0].loss}`);
+  assert.ok(launchedAfterLanding, 'the ball bounces back up');
+  assert.equal(lands[0].rebound, false);
+  assert.ok(lands.length < 2 || lands[1].rebound, 'the hop after the bounce is marked');
 });
 
 test('running into a step is a wall crash', () => {

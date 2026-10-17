@@ -22,7 +22,9 @@ export const BAND_HALF = 190; // half height of the drawable band
 export const PEN_TAU = 0.035; // pen smoothing time constant (seconds)
 export const MAX_SLOPE = 2.4; // steepest slope the pen can draw
 
-export const CRASH_IMPACT = 700 * K; // normal speed on impact that shatters the ball
+export const BOUNCE_IMPACT = 350 * K; // normal speed above which a landing bounces back
+export const RESTITUTION = 0.35; // share of the excess impact speed returned as a bounce
+export const HARD_IMPACT = 600 * K; // impact that gets the heaviest feedback
 export const WALL_PEN = 20; // penetration depth that counts as hitting a wall
 export const DETACH_EPS = 1.5; // height above ground that counts as airborne
 export const LAND_MIN_AIR = 0.12 / K; // airtime before a touchdown counts as a landing

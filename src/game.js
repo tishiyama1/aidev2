@@ -132,7 +132,8 @@ export class Game {
 
   _onLand(ev) {
     let quality = null;
-    if (ev.airTime >= FLOW_MIN_AIR) {
+    // The hop after a hard landing's bounce neither earns nor resets flow.
+    if (ev.airTime >= FLOW_MIN_AIR && !ev.rebound) {
       if (ev.loss < PERFECT_LOSS) {
         quality = 'perfect';
         this.flow = Math.min(FLOW_MAX, this.flow + 0.5);

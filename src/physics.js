@@ -2,20 +2,22 @@
 // collides with the drawn terrain. Contact removes the velocity component into
 // the surface, so a landing keeps exactly the part of its speed that runs
 // along the ground: matching the slope loses nothing, a flat landing from a
-// fall loses a lot. Rolling and flying are the same rule.
+// fall loses a lot. Rolling and flying are the same rule. A hard landing is
+// never fatal: it costs speed and kicks the ball back up a little.
 import {
   BALL_R,
   GRAVITY,
   DRAG,
   ROLL,
-  CRASH_IMPACT,
+  BOUNCE_IMPACT,
+  RESTITUTION,
   WALL_PEN,
   DETACH_EPS,
   LAND_MIN_AIR,
 } from './constants.js';
 
 export function createBall(x, y, vx, vy) {
-  return { x, y, vx, vy, grounded: true, airTime: 0, nx: 0, ny: -1 };
+  return { x, y, vx, vy, grounded: true, airTime: 0, nx: 0, ny: -1, rebound: false };
 }
 
 export function speedOf(ball) {
@@ -62,7 +64,6 @@ export function stepBall(ball, terrain, h) {
     ball.nx = nx;
     ball.ny = ny;
     const impact = Math.max(0, -vn);
-    if (impact > CRASH_IMPACT) return { type: 'crash', reason: 'impact', impact };
 
     let event = null;
     if (!ball.grounded && ball.airTime > LAND_MIN_AIR) {
@@ -74,7 +75,15 @@ export function stepBall(ball, terrain, h) {
         before,
         after,
         loss: before > 0 ? 1 - after / before : 0,
+        rebound: ball.rebound, // touchdown at the end of a bounce
       };
+      ball.rebound = false;
+    }
+    if (impact > BOUNCE_IMPACT) {
+      const kick = (impact - BOUNCE_IMPACT) * RESTITUTION;
+      ball.vx += kick * nx;
+      ball.vy += kick * ny;
+      ball.rebound = true;
     }
     ball.grounded = true;
     ball.airTime = 0;

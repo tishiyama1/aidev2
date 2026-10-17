@@ -1,6 +1,8 @@
 // Procedural sound: a rolling hum and wind that follow speed, plus short cues.
 // Browsers only allow audio after a click or key press, so unlock() is called
 // from input handlers.
+import { HARD_IMPACT } from './constants.js';
+
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
 
 export class Sound {
@@ -65,7 +67,8 @@ export class Sound {
   onEvent(e) {
     if (!this.ctx) return;
     if (e.type === 'land') {
-      this._thud(Math.min(1, e.impact / 600));
+      this._thud(Math.min(1.4, e.impact / HARD_IMPACT));
+      if (e.impact > HARD_IMPACT) this._burst(Math.min(0.4, (e.impact / HARD_IMPACT - 1) * 0.5 + 0.15));
       if (e.quality === 'perfect') this._chime([880, 1320], 0.12);
       else if (e.quality === 'clean') this._chime([660], 0.08);
     } else if (e.type === 'ring') {
